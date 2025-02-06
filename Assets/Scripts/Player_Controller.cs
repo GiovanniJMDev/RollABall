@@ -4,110 +4,145 @@ using TMPro;
 
 public class PlayerController : MonoBehaviour
 {
- // Rigidbody of the player.
- private Rigidbody rb; 
+    // Rigidbody del jugador.
+    private Rigidbody rb;
 
- // Variable to keep track of collected "PickUp" objects.
- private int count;
+    // Variable para llevar un conteo de los objetos "PickUp" recogidos.
+    private int count;
 
- // Movement along X and Y axes.
- private float movementX;
- private float movementY;
+    // Movimiento en los ejes X e Y.
+    private float movementX;
+    private float movementY;
 
- // Speed at which the player moves.
- public float speed = 0;
+    // Velocidad de movimiento del jugador.
+    public float speed = 0;
 
- // UI text component to display count of "PickUp" objects collected.
- public TextMeshProUGUI countText;
+    // Fuerza de salto.
+    public float jumpForce = 10f;
 
- // UI object to display winning text.
- public GameObject winTextObject;
+    // Variable para comprobar si el jugador está en el suelo.
+    private bool isGrounded;
 
- // Start is called before the first frame update.
- void Start()
+    // UI: texto que muestra el conteo de objetos "PickUp" recogidos.
+    public TextMeshProUGUI countText;
+
+    // UI: objeto que muestra el texto de victoria.
+    public GameObject winTextObject;
+
+    // UI: objeto que muestra el texto de derrota.
+    public GameObject loseTextObject;
+
+    // Start se llama antes de la primera actualización de fotograma.
+    void Start()
     {
- // Get and store the Rigidbody component attached to the player.
+        // Obtener y almacenar el componente Rigidbody.
         rb = GetComponent<Rigidbody>();
 
- // Initialize count to zero.
+        // Inicializar el conteo de objetos recogidos a cero.
         count = 0;
 
- // Update the count display.
+        // Actualizar el texto del conteo.
         SetCountText();
 
- // Initially set the win text to be inactive.
+        // Inicialmente desactivar el texto de victoria y derrota.
         winTextObject.SetActive(false);
+        loseTextObject.SetActive(false);
     }
- 
- // This function is called when a move input is detected.
- void OnMove(InputValue movementValue)
+
+    // Esta función se llama cuando se detecta una entrada de movimiento.
+    void OnMove(InputValue movementValue)
     {
- // Convert the input value into a Vector2 for movement.
+        // Convertir el valor de entrada en un Vector2 para el movimiento.
         Vector2 movementVector = movementValue.Get<Vector2>();
 
- // Store the X and Y components of the movement.
-        movementX = movementVector.x; 
-        movementY = movementVector.y; 
+        // Almacenar los componentes X e Y del movimiento.
+        movementX = movementVector.x;
+        movementY = movementVector.y;
     }
 
- // FixedUpdate is called once per fixed frame-rate frame.
- private void FixedUpdate() 
+    // Esta función se llama cuando se detecta una entrada de salto.
+void OnJump(InputValue jumpValue)
+{
+    if (isGrounded)
     {
- // Create a 3D movement vector using the X and Y inputs.
-        Vector3 movement = new Vector3 (movementX, 0.0f, movementY);
+        Debug.Log("Salto detectado");  // Esto te ayudará a ver si está detectando la entrada correctamente.
+        rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+    }
+    else
+    {
+        Debug.Log("No está en el suelo, no salta");
+    }
+}
 
- // Apply force to the Rigidbody to move the player.
-        rb.AddForce(movement * speed); 
+    // FixedUpdate se llama una vez por cada fotograma de actualización de la física.
+    private void FixedUpdate()
+    {
+        // Crear un vector 3D para el movimiento utilizando las entradas X e Y.
+        Vector3 movement = new Vector3(movementX, 0.0f, movementY);
+
+        // Aplicar fuerza al Rigidbody para mover al jugador.
+        rb.AddForce(movement * speed);
     }
 
- 
- void OnTriggerEnter(Collider other) 
+    // Detecta cuando el jugador entra en contacto con un objeto.
+    void OnTriggerEnter(Collider other)
     {
- // Check if the object the player collided with has the "PickUp" tag.
- if (other.gameObject.CompareTag("PickUp")) 
+        if (other.gameObject.CompareTag("PickUp"))
         {
- // Deactivate the collided object (making it disappear).
+            // Desactivar el objeto recogido (lo hace desaparecer).
             other.gameObject.SetActive(false);
 
- // Increment the count of "PickUp" objects collected.
-            count = count + 1;
+            // Incrementar el conteo de objetos recogidos.
+            count++;
 
- // Update the count display.
+            // Actualizar el texto del conteo.
             SetCountText();
         }
     }
 
- // Function to update the displayed count of "PickUp" objects collected.
- void SetCountText() 
+    // Actualiza el texto que muestra el conteo de objetos recogidos.
+    void SetCountText()
     {
- // Update the count text with the current count.
         countText.text = "Count: " + count.ToString();
 
- // Check if the count has reached or exceeded the win condition.
- if (count >= 8)
+        if (count >= 8)
         {
- // Display the win text.
+            // Mostrar el texto de victoria.
             winTextObject.SetActive(true);
 
- // Destroy the enemy GameObject.
+            // Destruir el objeto enemigo si se gana.
             Destroy(GameObject.FindGameObjectWithTag("Enemy"));
         }
     }
 
-private void OnCollisionEnter(Collision collision)
-{
- if (collision.gameObject.CompareTag("Enemy"))
+    // Detecta las colisiones con otros objetos (como el suelo).
+    private void OnCollisionStay(Collision collision)
     {
- // Destroy the current object
-        Destroy(gameObject); 
- 
- // Update the winText to display "You Lose!"
-        winTextObject.gameObject.SetActive(true);
-        winTextObject.GetComponent<TextMeshProUGUI>().text = "You Lose!";
- 
+        if (collision.gameObject.CompareTag("Ground"))
+        {
+            isGrounded = true;  // El jugador está tocando el suelo.
+        }
     }
 
-}
+    // Detecta cuando el jugador ya no está tocando el suelo.
+    private void OnCollisionExit(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Ground"))
+        {
+            isGrounded = false;  // El jugador ha dejado de tocar el suelo.
+        }
+    }
 
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (collision.gameObject.CompareTag("Enemy"))
+        {
+            // Destruir el objeto actual (el jugador) al chocar con un enemigo.
+            Destroy(gameObject);
 
+            // Mostrar el texto de derrota.
+            winTextObject.gameObject.SetActive(true);
+            winTextObject.GetComponent<TextMeshProUGUI>().text = "You Lose!";
+        }
+    }
 }
