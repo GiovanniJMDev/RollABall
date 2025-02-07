@@ -26,11 +26,11 @@ public class PlayerController : MonoBehaviour
     // UI: texto que muestra el conteo de objetos "PickUp" recogidos.
     public TextMeshProUGUI countText;
 
-    // UI: objeto que muestra el texto de victoria.
+    // UI: objeto que muestra el texto de victoria o derrota.
     public GameObject winTextObject;
 
-    // UI: objeto que muestra el texto de derrota.
-    public GameObject loseTextObject;
+    // UI: botón de reinicio.
+    public GameObject restartButton;
 
     // Start se llama antes de la primera actualización de fotograma.
     void Start()
@@ -44,9 +44,9 @@ public class PlayerController : MonoBehaviour
         // Actualizar el texto del conteo.
         SetCountText();
 
-        // Inicialmente desactivar el texto de victoria y derrota.
+        // Inicialmente desactivar el texto de victoria y derrota, y el botón de reinicio.
         winTextObject.SetActive(false);
-        loseTextObject.SetActive(false);
+        restartButton.SetActive(false);
     }
 
     // Esta función se llama cuando se detecta una entrada de movimiento.
@@ -61,18 +61,18 @@ public class PlayerController : MonoBehaviour
     }
 
     // Esta función se llama cuando se detecta una entrada de salto.
-void OnJump(InputValue jumpValue)
-{
-    if (isGrounded)
+    void OnJump(InputValue jumpValue)
     {
-        Debug.Log("Salto detectado");  // Esto te ayudará a ver si está detectando la entrada correctamente.
-        rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+        if (isGrounded)
+        {
+            Debug.Log("Salto detectado");  // Esto te ayudará a ver si está detectando la entrada correctamente.
+            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+        }
+        else
+        {
+            Debug.Log("No está en el suelo, no salta");
+        }
     }
-    else
-    {
-        Debug.Log("No está en el suelo, no salta");
-    }
-}
 
     // FixedUpdate se llama una vez por cada fotograma de actualización de la física.
     private void FixedUpdate()
@@ -107,8 +107,10 @@ void OnJump(InputValue jumpValue)
 
         if (count >= 8)
         {
-            // Mostrar el texto de victoria.
+            // Mostrar el texto de victoria y el botón de reinicio.
             winTextObject.SetActive(true);
+            winTextObject.GetComponent<TextMeshProUGUI>().text = "You Win!";
+            restartButton.SetActive(true);
 
             // Destruir el objeto enemigo si se gana.
             Destroy(GameObject.FindGameObjectWithTag("Enemy"));
@@ -140,9 +142,11 @@ void OnJump(InputValue jumpValue)
             // Destruir el objeto actual (el jugador) al chocar con un enemigo.
             Destroy(gameObject);
 
-            // Mostrar el texto de derrota.
+            // Mostrar el texto de derrota y el botón de reinicio.
             winTextObject.gameObject.SetActive(true);
             winTextObject.GetComponent<TextMeshProUGUI>().text = "You Lose!";
+            restartButton.SetActive(true);
         }
     }
+
 }
